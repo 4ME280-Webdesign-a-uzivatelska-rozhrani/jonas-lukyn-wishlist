@@ -1,0 +1,26 @@
+
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <title>Dárkový seznam</title>
+</head>
+<body>
+    <h1>🎁 Lukyho Dárkový Seznam</h1>
+    <div id="wishlist">Načítání seznamu…</div>
+
+    <script>
+        fetch("https://raw.githubusercontent.com/jonas-lukyn/jonas-lukyn-wishlist/main/wishlist.md")
+            .then(response => response.text())
+            .then(data => {
+                const converter = new showdown.Converter();
+                document.getElementById("wishlist").innerHTML = converter.makeHtml(data);
+            })
+            .catch(err => {
+                document.getElementById("wishlist").innerText = "Nepodařilo se načíst wishlist.";
+            });
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/showdown/dist/showdown.min.js"></script>
+</body>
+</html>
