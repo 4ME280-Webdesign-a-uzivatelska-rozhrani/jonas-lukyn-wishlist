@@ -1,0 +1,98 @@
+
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <title>Dárkový wishlist</title>
+    <style>
+        body { font-family: sans-serif; padding: 2rem; background: #f7f7f7; }
+        .gift { background: white; padding: 1rem; margin-bottom: 1rem; border-radius: 8px; box-shadow: 0 0 8px rgba(0,0,0,0.1); }
+        img { max-width: 200px; display: block; margin: 1rem 0; }
+    </style>
+</head>
+<body>
+    <h1>🎁 Lukyho Dárkový Seznam</h1>
+    <div id="wishlist">Načítání...</div>
+
+    <script>
+        const binId = "6838b0028960c979a5a2d42c";
+        const masterKey = "$2a$10$MWvHAY0.YCHSUFHlju9kzeWfGv5TUfkXYrOUTayLDHM1wwaFQZfo2";
+        const endpoint = "https://api.jsonbin.io/v3/b/" + binId;
+
+        function renderGifts(data) {
+            const container = document.getElementById("wishlist");
+            container.innerHTML = "";
+
+            data.forEach((gift, index) => {
+                const div = document.createElement("div");
+                div.className = "gift";
+
+                div.innerHTML = `
+                    <h2>${gift.name}</h2>
+                    <a href="${gift.link}" target="_blank">Odkaz na produkt</a><br>
+                    <img src="${gift.image}" alt="Obrázek dárku">
+                    <p><strong>Cena:</strong> ${gift.price}</p>
+                `;
+
+                if (gift.reserved_by) {
+                    div.innerHTML += `<p><strong>Zamluveno:</strong> ${gift.reserved_by}</p>`;
+                } else {
+                    div.innerHTML += `
+                        <input type="text" id="name-${index}" placeholder="Vaše jméno">
+                        <button onclick="reserveGift(${index})">Zamluvit</button>
+                    `;
+                }
+
+                container.appendChild(div);
+            });
+        }
+
+        function fetchGifts() {
+            fetch(endpoint + "/latest", {
+                headers: {
+                    "X-Master-Key": masterKey
+                }
+            })
+            .then(res => res.json())
+            .then(json => renderGifts(json.record))
+            .catch(err => {
+                document.getElementById("wishlist").innerText = "Chyba při načítání dat.";
+            });
+        }
+
+        function reserveGift(index) {
+            const input = document.getElementById("name-" + index);
+            const name = input.value.trim();
+            if (!name) return alert("Zadejte prosím své jméno.");
+
+            fetch(endpoint + "/latest", {
+                headers: {
+                    "X-Master-Key": masterKey
+                }
+            })
+            .then(res => res.json())
+            .then(json => {
+                const data = json.record;
+                if (data[index].reserved_by) {
+                    alert("Tento dárek už je zamluvený.");
+                    return;
+                }
+                data[index].reserved_by = name;
+
+                return fetch(endpoint, {
+                    method: "PUT",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-Master-Key": masterKey
+                    },
+                    body: JSON.stringify(data)
+                });
+            })
+            .then(() => fetchGifts())
+            .catch(err => alert("Nastala chyba při ukládání."));
+        }
+
+        fetchGifts();
+    </script>
+</body>
+</html>
